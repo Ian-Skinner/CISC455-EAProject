@@ -1,15 +1,11 @@
 import tkinter as tk
 
+
 class TreeGrid:
     EMPTY = 0
     TREE = 1
     BURNING = 2
-
-    # chance of fire spreading to a cell based on its state
-    SPREAD_CHANCES = {
-        EMPTY: 0.2, # Lower chance to spread to empty cells
-        TREE: 0.5,
-    }
+    BURNT = 3
 
     def __init__(self, size, genome=None):
         self.height = size
@@ -68,7 +64,14 @@ class TreeGrid:
         for row in self.grid:
             print(' '.join(str(cell) for cell in row))
 
+
+    """
+    Grid active until no fire spread for 5 iterations. Genome is evaluated on how many trees are left.    
+    """
+
+
 class GridVisualizer:
+    # This is AI slop, I dont feel like coding a UI lmao
     COLORS = {
         TreeGrid.EMPTY: "#9e9e9e",
         TreeGrid.TREE: "#2e7d32",
@@ -117,6 +120,35 @@ class GridVisualizer:
         self.root.mainloop()
 
 
+class Fire:
+    def __init__(self, tree_grid: TreeGrid):
+        self.tree_grid = tree_grid
+        self.spread_chance = {
+            TreeGrid.TREE: 0.3,
+            TreeGrid.EMPTY: 0.1,
+            TreeGrid.BURNING: 0.0,
+            TreeGrid.BURNT: 0.0,
+        }
+
+    def run(self):
+        # Simulate fire spread until no more burning trees, finished genome is the final state of the grid
+        finishedGenome = self.tree_grid.encode()
+
+        """
+        Runs the fire simulation
+        Fire starts at random point with a tree on it,
+        each 'tick' it has a chance to spread to adjacent cells (up, down, left, right)
+        Probability of spread is:
+            0.3 for tree cells
+            0.1 for empty cells
+        Once fire spreads to a cell, it becomes burning for 3 ticks, then becomes burnt (value = 3) and cannot catch fire again.
+        Simulation stops after 5 ticks with no new burning trees, or after 100 ticks total to prevent infinite loops.
+        returns the final genome after the fire simulation is complete, which can be used to evaluate the fitness of the original genome based on how many trees remain unburnt.
+        """
+
+
+
+        return finishedGenome
 
 
 testGenome = [
