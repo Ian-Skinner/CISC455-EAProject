@@ -1,5 +1,5 @@
 import tkinter as tk
-
+import random
 
 class TreeGrid:
     EMPTY = 0
@@ -150,16 +150,64 @@ class Fire:
 
         return finishedGenome
 
+class Placement:
+    """
+    Represents a candidate tree arrangement for the evolutionary algorithm.
 
-testGenome = [
-    0, 1, 0, 0, 0,
-    1, 1, 1, 0, 0,
-    0, 1, 0, 1, 0,
-    0, 0, 1, 1, 1,
-    0, 0, 0, 1, 0
-]
+    Stores a grid as a flat binary genome (0 = empty, 1 = tree) and provides
+    utilities to generate, copy, and convert it into a TreeGrid for simulation.
 
-Test = TreeGrid(size=5, genome=testGenome)
+    Used as the individual in the population, modified by mutation/crossover,
+    and evaluated based on fire spread.
+    """
+    def __init__(self, size, num_trees=None):
+        self.size = size
+        self.genome_length = size * size
+        self.num_trees = num_trees
 
-viewer = GridVisualizer(Test, cell_size=40, title="Forest Fire Grid")
+    def random_genome(self):
+        if self.num_trees is None:
+            return [random.randint(0, 1) for _ in range(self.genome_length)]
+        
+        genome = [0] * self.genome_length
+        tree_positions = random.sample(range(self.genome_length), self.num_trees)
+        
+        for pos in tree_positions:
+            genome[pos] = 1
+        
+        return genome
+
+    def generate_population(self, pop_size):
+        return [self.random_genome() for _ in range(pop_size)]
+
+    def repair(self, genome):
+        if self.num_trees is None:
+            return genome
+
+        genome = list(genome)
+        current_trees = sum(genome)
+
+        if current_trees > self.num_trees:
+            tree_indices = [i for i, g in enumerate(genome) if g == 1]
+            remove = random.sample(tree_indices, current_trees - self.num_trees)
+            for i in remove:
+                genome[i] = 0
+
+        elif current_trees < self.num_trees:
+            empty_indices = [i for i, g in enumerate(genome) if g == 0]
+            add = random.sample(empty_indices, self.num_trees - current_trees)
+            for i in add:
+                genome[i] = 1
+
+        return genome
+
+size = 20
+num_trees = 150
+
+placement = Placement(size=size, num_trees=num_trees)
+genome = placement.random_genome()
+
+Test = TreeGrid(size=size, genome=genome)
+
+viewer = GridVisualizer(Test, cell_size=20, title="Forest Fire Grid")
 viewer.mainloop()
