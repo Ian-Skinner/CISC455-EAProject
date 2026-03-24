@@ -23,11 +23,14 @@ class Fire:
         else: 
             self.y = y
 
+
+        if not (0 <= self.x < treeGrid.size and 0 <= self.y < treeGrid.size):
+            return
+
         if treeGrid.genome[treeGrid.idx(self.x, self.y)] != 1:
             return
         
-        if not (0 <= self.x < treeGrid.size and 0 <= self.y < treeGrid.size):
-            return
+       
             
 
         self.treeGrid = treeGrid
