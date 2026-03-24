@@ -1,6 +1,7 @@
 import tkinter as tk
 import random
 
+
 class TreeGrid:
     EMPTY = 0
     TREE = 1
