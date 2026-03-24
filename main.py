@@ -1,6 +1,6 @@
 import tkinter as tk
 import random
-
+from fire import Fire
 
 class TreeGrid:
     EMPTY = 0
@@ -121,7 +121,7 @@ class GridVisualizer:
         self.root.mainloop()
 
 
-class Fire:
+class FireOld:
     def __init__(self, tree_grid: TreeGrid):
         self.tree_grid = tree_grid
         self.spread_chance = {
@@ -150,6 +150,7 @@ class Fire:
 
 
         return finishedGenome
+
 
 class Placement:
     """
@@ -203,12 +204,58 @@ class Placement:
         return genome
 
 size = 20
-num_trees = 150
+num_trees = 200
 
 placement = Placement(size=size, num_trees=num_trees)
 genome = placement.random_genome()
 
 Test = TreeGrid(size=size, genome=genome)
-
 viewer = GridVisualizer(Test, cell_size=20, title="Forest Fire Grid")
+
+# ignite one random tree
+
+
+first_fire = Fire(Test)
+second_fire = Fire(Test)
+fires = []
+fires.append(first_fire)
+fires.append(second_fire)
+
+for i in range(len(fires)):
+    while True:
+        try:
+            fires[i].burnProb
+        except:
+            fires[i] = Fire(Test)
+        else:
+            break
+
+
+
+
+
+def tick():
+    print("tick")
+    global fires
+
+    new_fires = []
+    for f in fires:
+        print(f)
+        alive = f.update()
+        if alive[0]:
+            new_fires.append(f)
+        new_fires.extend(x for x in alive[1] if x.isValid)
+
+
+    fires = new_fires
+
+    Test.grid = Test.decode(Test.genome)
+    viewer.render()
+
+    #if fires:
+    viewer.root.after(200, tick)
+    #else:
+    #    print("Simulation complete.")
+
+viewer.root.after(200, tick)
 viewer.mainloop()

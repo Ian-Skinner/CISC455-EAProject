@@ -3,7 +3,7 @@ import random
 
 class Fire:
 
-    def __init__(self, treeGrid, burnProb = 0.75, jumpProb = 0.2, jump2Prob = 0.1, x = None, y= None):
+    def __init__(self, treeGrid, burnProb = 0.75, jumpProb = 0.9, jump2Prob = 0.8, x = None, y= None):
 
         # initializes a fire. A "fire" object is called on a singular tile.
         # burnProb is the probability the fire continues to burn each frame.
@@ -25,10 +25,12 @@ class Fire:
 
 
         if not (0 <= self.x < treeGrid.size and 0 <= self.y < treeGrid.size):
+            self.isValid = False
             return
 
         if treeGrid.genome[treeGrid.idx(self.x, self.y)] != 1:
-            return
+            self.isValid = False
+            return 
         
        
             
@@ -41,6 +43,7 @@ class Fire:
 
 
         treeGrid.genome[treeGrid.idx(self.x, self.y)] = 2  # burning
+        self.isValid = True
 
 
     def update(self):
@@ -56,18 +59,20 @@ class Fire:
         jumpChecks[2] = random.random()
         jumpChecks[3] = random.random()
 
+        newFires = []
+
         c = random.randint(1,4)
         for j in jumpChecks:
             if j < self.jumpProb:
                 match c:
                     case 1:
-                        Fire(self.treeGrid, x = self.x + 1, y = self.y)
+                        newFires.append(Fire(self.treeGrid, x = self.x + 1, y = self.y))
                     case 2:
-                        Fire(self.treeGrid, x = self.x - 1, y = self.y)
+                        newFires.append(Fire(self.treeGrid, x = self.x - 1, y = self.y))
                     case 3:
-                        Fire(self.treeGrid, x = self.x, y = self.y + 1)
+                        newFires.append(Fire(self.treeGrid, x = self.x, y = self.y + 1))
                     case 4:
-                        Fire(self.treeGrid, x = self.x, y = self.y - 1)
+                        newFires.append(Fire(self.treeGrid, x = self.x, y = self.y - 1))
 
                 c += 1
 
@@ -84,7 +89,8 @@ class Fire:
 
         if burnCheck > self.burnProb:
             self.treeGrid.genome[self.treeGrid.idx(self.x, self.y)] = 3  # burnt 
-            return False
+            return (False, newFires)
+        return (True, newFires)
 
         
 
