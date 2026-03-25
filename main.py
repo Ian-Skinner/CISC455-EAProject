@@ -66,6 +66,30 @@ class TreeGrid:
             print(' '.join(str(cell) for cell in row))
 
 
+
+def Crossover(parent1, parent2):
+
+    child1 = TreeGrid(parent1.size)
+    child2 = TreeGrid(parent2.size)
+
+    child1.genome = parent1.genome.copy()
+    child2.genome = parent2.genome.copy()
+
+    row1 = random.randint(0, parent1.size - 1)
+    row2 = random.randint(0, parent1.size - 1)
+    col1 = random.randint(0, parent1.size - 1)
+    col2 = random.randint(0, parent1.size - 1)
+
+    for i in range(min(row1, row2),max(row1, row2)):
+        for j in range(min(col1,col2) ,max(col1,col2)):
+            temp = child1.genome[child1.idx(i,j)]
+            child1.genome[child1.idx(i,j)] = child2.genome[child2.idx(i,j)]
+            child2.genome[child2.idx(i,j)] = temp
+
+
+
+
+
 class GridVisualizer:
 
     COLORS = {
