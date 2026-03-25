@@ -170,7 +170,7 @@ class Placement:
 
 # Fitness val. is an avg of surviving trees over multiple fire simulations (currently 10)
 
-def evaluate_fitness(genome, size, num_runs=10):
+def evaluate_fitness(genome, size, num_runs=100):
     
     # counter of all trees survived (accumulates over runs, doesn't reset)
     total_surviving = 0
