@@ -67,7 +67,7 @@ class TreeGrid:
 
 
 class GridVisualizer:
-    # This is AI slop, I dont feel like coding a UI lmao
+
     COLORS = {
         TreeGrid.EMPTY: "#9e9e9e",
         TreeGrid.TREE: "#2e7d32",
@@ -167,6 +167,46 @@ class Placement:
 
         return genome
 
+
+# Fitness val. is an avg of surviving trees over multiple fire simulations (currently 10)
+
+def evaluate_fitness(genome, size, num_runs=10):
+    
+    # counter of all trees survived (accumulates over runs, doesn't reset)
+    total_surviving = 0
+
+    for _ in range(num_runs):
+        grid = TreeGrid(size=size, genome=genome[:])  # copy the genome so original is untouched
+
+        # Find initial fire spot
+        fire = Fire(grid)
+        while not fire.isValid:
+            fire = Fire(grid)
+
+        fires = [fire]
+
+        # Run fire simulation
+        while fires:
+            new_fires = []
+
+            for f in fires:
+                alive = f.update()
+
+                # if tree still burning, add to new_fires
+                if alive[0]:
+                    new_fires.append(f)
+
+                # locate all newly burning tiles, add to new_fires
+                new_fires.extend(x for x in alive[1] if x.isValid)
+
+            # replace fire list with updated one. old burnt-out fires/tiles are shuffled out    
+            fires = new_fires
+
+        # count how many ints in the genome are still trees (1) and add them to the accumulator
+        total_surviving += grid.genome.count(1)
+
+    return total_surviving / num_runs
+
 size = 20
 num_trees = 200
 
@@ -175,6 +215,9 @@ genome = placement.random_genome()
 
 Test = TreeGrid(size=size, genome=genome)
 viewer = GridVisualizer(Test, cell_size=20, title="Forest Fire Grid")
+
+# fitness test debug
+print("FITNESS VAL for this genome is: ", evaluate_fitness(genome, size))
 
 # ignite one random tree
 
@@ -215,10 +258,10 @@ def tick():
     Test.grid = Test.decode(Test.genome)
     viewer.render()
 
-    #if fires:
-    viewer.root.after(200, tick)
-    #else:
-    #    print("Simulation complete.")
+    if fires:
+        viewer.root.after(200, tick)
+    else:
+        print("Simulation complete.")
 
 viewer.root.after(200, tick)
 viewer.mainloop()
