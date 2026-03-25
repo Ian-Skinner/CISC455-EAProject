@@ -74,11 +74,11 @@ class GridVisualizer:
         TreeGrid.BURNING: "#fb8c00"
     }
 
-    def __init__(self, tree_grid: TreeGrid, cell_size: int = 28, title: str = "Tree Grid"):
+    def __init__(self, tree_grid: TreeGrid, cell_size: int = 28, title: str = "Tree Grid", master=None):
         self.tree_grid = tree_grid
         self.cell_size = cell_size
 
-        self.root = tk.Tk()
+        self.root = tk.Tk() if master is None else tk.Toplevel(master)
         self.root.title(title)
 
         w = tree_grid.width * cell_size
@@ -207,22 +207,93 @@ def evaluate_fitness(genome, size, num_runs=100):
 
     return total_surviving / num_runs
 
-size = 20
-num_trees = 200
 
-placement = Placement(size=size, num_trees=num_trees)
+
+def mutate(genome, stepSize):
+    # Flip 0 (empty) to 1 (tree) and 1 (tree) to 0 (empty) depending on mutation step size
+    # stepSize is the probability of mutation for each gene, between 0 and 1
+
+    return [1 - cell if random.random() < stepSize else cell for cell in genome]
+
+def evolutionaryLoop(parentGenome, currentFitness, iterations):
+    genome = parentGenome
+    stepSize = 0.05 # initial value for first mutation
+
+    successCount = 0
+    trialCount = 0
+
+    for i in range(iterations):
+        #Mutate
+        mutatedGenome = mutate(genome, stepSize)
+        mutatedGenomeFitness = evaluate_fitness(mutatedGenome, GRID_SIZE)
+
+        # Check success of mutation
+        if mutatedGenomeFitness > currentFitness:
+            successCount += 1
+            genome = mutatedGenome
+            currentFitness = mutatedGenomeFitness
+
+        trialCount += 1
+
+        # Apply 1/5 success rule to adjust mutation step size every WINDOW_SIZE iterations
+        if trialCount == WINDOW_SIZE:
+            successRate = successCount / trialCount
+
+            if successRate > TARGET_SUCCESS_RATE:
+                stepSize *= ADJUSTMENT_FACTOR
+            elif successRate < TARGET_SUCCESS_RATE:
+                stepSize /= ADJUSTMENT_FACTOR
+
+            stepSize = max(0.001, min(0.5, stepSize))
+
+            successCount = 0
+            trialCount = 0
+
+    return genome, currentFitness
+
+"""
+SET INITIAL PARAMETERS
+"""
+GRID_SIZE = 20 # size of the grid (square grid, so this is both width and height)
+NUM_TREES = 200 # number of trees to place in the grid.
+
+"""
+GENERATE INITIAL RANDOM GENOME
+"""
+placement = Placement(size=GRID_SIZE, num_trees=NUM_TREES)
 genome = placement.random_genome()
 
-Test = TreeGrid(size=size, genome=genome)
-viewer = GridVisualizer(Test, cell_size=20, title="Forest Fire Grid")
+InitialGenome = TreeGrid(size=GRID_SIZE, genome=genome)
+viewerInitial = GridVisualizer(InitialGenome, cell_size=20, title="Initial Tree Arrangement")
 
-# fitness test debug
-print("FITNESS VAL for this genome is: ", evaluate_fitness(genome, size))
+"""
+EVALUATE FITNESS OF INITIAL GENOME
+"""
+fitnessValue = evaluate_fitness(genome, GRID_SIZE)
+print("Fitness value for initial genome is: ", fitnessValue)
+
+
+"""
+MUTATE THE GENOME
+using 1/5 success rule for variable mutation step size
+"""
+TARGET_SUCCESS_RATE = 0.2
+ADJUSTMENT_FACTOR = 1.5
+WINDOW_SIZE = 20 
+mutatedGenome, newFitness = evolutionaryLoop(genome, fitnessValue, iterations=1000)
+
+print("Fitness value for mutated genome is: ", newFitness)
+
+FinalGenome = TreeGrid(size=GRID_SIZE, genome=mutatedGenome)
+viewerFinal = GridVisualizer(FinalGenome, cell_size=20, title="Final Tree Arrangement", master=viewerInitial.root)
+
+viewerInitial.mainloop()
+
+
 
 # ignite one random tree
-
-first_fire = Fire(Test)
-second_fire = Fire(Test)
+first_fire = Fire(InitialGenome)
+second_fire = Fire(InitialGenome)
 fires = []
 fires.append(first_fire)
 fires.append(second_fire)
@@ -232,21 +303,17 @@ for i in range(len(fires)):
         try:
             fires[i].burnProb
         except:
-            fires[i] = Fire(Test)
+            fires[i] = Fire(InitialGenome)
         else:
             break
 
-
-
-
-
 def tick():
-    print("tick")
+    # print("tick")
     global fires
 
     new_fires = []
     for f in fires:
-        print(f)
+        # print(f)
         alive = f.update()
         if alive[0]:
             new_fires.append(f)
@@ -255,13 +322,13 @@ def tick():
 
     fires = new_fires
 
-    Test.grid = Test.decode(Test.genome)
-    viewer.render()
+    InitialGenome.grid = InitialGenome.decode(InitialGenome.genome)
+    viewerInitial.render()
 
     if fires:
-        viewer.root.after(200, tick)
+        viewerInitial.root.after(200, tick)
     else:
         print("Simulation complete.")
 
-viewer.root.after(200, tick)
-viewer.mainloop()
+# viewerInitial.root.after(200, tick)
+# viewerInitial.mainloop()
