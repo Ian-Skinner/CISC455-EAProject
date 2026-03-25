@@ -370,6 +370,7 @@ def run_ea(size, num_trees, pop_size=50, generations=100, num_runs=10, num_elite
     return best_genome, best_fitness
 
 
+
 """
 SET INITIAL PARAMETERS
 """
@@ -391,6 +392,19 @@ EVALUATE FITNESS OF INITIAL GENOME
 fitnessValue = evaluate_fitness(genome, GRID_SIZE)
 print("Fitness value for initial genome is: ", fitnessValue)
 
+
+"""
+TEST run_ea
+"""
+print("\n--- run_ea test: small run (pop=10, gen=5) ---")
+test_genome, test_fitness = run_ea(size=GRID_SIZE, num_trees=NUM_TREES, pop_size=10, generations=5, num_runs=5)
+print(f"run_ea result: {test_fitness:.2f} surviving trees (out of {NUM_TREES})")
+
+print("\n--- run_ea test: compare two runs ---")
+genome_a, fitness_a = run_ea(size=GRID_SIZE, num_trees=NUM_TREES, pop_size=10, generations=3, num_runs=5)
+genome_b, fitness_b = run_ea(size=GRID_SIZE, num_trees=NUM_TREES, pop_size=10, generations=3, num_runs=5)
+print(f"Run A fitness: {fitness_a:.2f} | Run B fitness: {fitness_b:.2f}")
+print(f"Better run: {'A' if fitness_a >= fitness_b else 'B'}")
 
 """
 MUTATE THE GENOME
