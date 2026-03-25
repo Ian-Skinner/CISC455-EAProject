@@ -3,7 +3,7 @@ import random
 
 class Fire:
 
-    def __init__(self, treeGrid, burnProb = 0.75, jumpProb = 0.9, jump2Prob = 0.8, x = None, y= None):
+    def __init__(self, treeGrid, burnProb = 0.75, jumpProb = 0.7, jump2Prob = 0.6, x = None, y= None):
 
         # initializes a fire. A "fire" object is called on a singular tile.
         # burnProb is the probability the fire continues to burn each frame.
