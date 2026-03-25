@@ -324,18 +324,20 @@ EVALUATE FITNESS OF INITIAL GENOME
 """
 counter = 0
 
-while counter < 10:
+while counter < 20:
 
 
     for p in population:
         p.fitness = evaluate_fitness(p.genome, GRID_SIZE)
 
-    print("Best fitness:", population[0].fitness)
+
 
     population.sort(key=lambda p: p.fitness, reverse=True)
     survivors = population[:len(population)//2]
 
-    random.shuffle(survivors)
+    print("Best fitness:", survivors[0].fitness)
+
+    
 
 
     population = []
@@ -344,6 +346,8 @@ while counter < 10:
 
     population = elite.copy()
 
+    random.shuffle(elite)
+
     while len(population) < 1000:
         p1 = random.choice(elite)
         p2 = random.choice(elite)
@@ -351,11 +355,17 @@ while counter < 10:
         c1, c2 = Crossover(p1, p2)
 
 
-        c1.genome = mutate(c1.genome, 0.05)
-        c2.genome = mutate(c2.genome, 0.05)
+        c1.genome = mutate(c1.genome, 0.01)
+        c2.genome = mutate(c2.genome, 0.01)
+
+        
+
+        c1.genome = placement.repair(c1.genome)
+        c2.genome = placement.repair(c2.genome)
 
         c1.grid = c1.decode(c1.genome)
         c2.grid = c2.decode(c2.genome)
+        
 
         population.extend([c1, c2])
 
@@ -363,6 +373,9 @@ while counter < 10:
 #    p, newFitness = evolutionaryLoop(p, fitnessValue, iterations=1000)
 
 print("Fitness value for mutated (crossoverd?) genome is: ", population[0].fitness)
+
+population.sort(key=lambda p: p.fitness, reverse=True)
+survivors = population[:len(population)//2]
 
 FinalGenome = TreeGrid(size=GRID_SIZE, genome=population[0].genome)
 viewerFinal = GridVisualizer(FinalGenome, cell_size=20, title="Final Tree Arrangement", master=viewerInitial.root)
