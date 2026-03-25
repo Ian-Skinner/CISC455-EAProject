@@ -1,6 +1,7 @@
 import tkinter as tk
 import random
 from fire import Fire
+import statistics
 
 class TreeGrid:
     EMPTY = 0
@@ -12,6 +13,7 @@ class TreeGrid:
         self.height = size
         self.width = size
         self.size = size
+        self.fitness = 0
 
         # Use a flat genome where 0 = empty, 1 = tree
         # Burning not part of genome as EA does not care about burning state
@@ -90,13 +92,14 @@ def Crossover(parent1, parent2):
 
     for c in [child1, child2]:
 
-        current_trees = c.genome.count(1)
+        for c in [child1, child2]:
+            while c.genome.count(1) < num_trees:
+                c.genome[random.randint(0, len(c.genome) - 1)] = 1
 
-        while current_trees < num_trees:
-            c.genome[random.randint(0, len(c.genome) - 1)] = 1
+            while c.genome.count(1) > num_trees:
+                c.genome[random.randint(0, len(c.genome) - 1)] = 0
 
-        while current_trees > num_trees:
-            c.genome[random.randint(0, len(c.genome) - 1)] = 0
+    return child1, child2
 
     
 
@@ -215,7 +218,7 @@ class Placement:
 
 # Fitness val. is an avg of surviving trees over multiple fire simulations (currently 10)
 
-def evaluate_fitness(genome, size, num_runs=100):
+def evaluate_fitness(genome, size, num_runs=20):
     
     # counter of all trees survived (accumulates over runs, doesn't reset)
     total_surviving = 0
@@ -262,7 +265,7 @@ def mutate(genome, stepSize):
 
 def evolutionaryLoop(parentGenome, currentFitness, iterations):
     genome = parentGenome
-    stepSize = 0.05 # initial value for first mutation
+    stepSize = 0.01 # initial value for first mutation
 
     successCount = 0
     trialCount = 0
@@ -305,31 +308,63 @@ NUM_TREES = 200 # number of trees to place in the grid.
 """
 GENERATE INITIAL RANDOM GENOME
 """
-placement = Placement(size=GRID_SIZE, num_trees=NUM_TREES)
-genome = placement.random_genome()
 
-InitialGenome = TreeGrid(size=GRID_SIZE, genome=genome)
-viewerInitial = GridVisualizer(InitialGenome, cell_size=20, title="Initial Tree Arrangement")
+population = []
+
+for i in range(1000):
+    placement = Placement(size=GRID_SIZE, num_trees=NUM_TREES)
+    genome = placement.random_genome()
+    InitialGenome = TreeGrid(size=GRID_SIZE, genome=genome)
+    population.append(InitialGenome)
+
+viewerInitial = GridVisualizer(population[0], cell_size=20, title="Initial Tree Arrangement (genome 1)")
 
 """
 EVALUATE FITNESS OF INITIAL GENOME
 """
-fitnessValue = evaluate_fitness(genome, GRID_SIZE)
-print("Fitness value for initial genome is: ", fitnessValue)
+counter = 0
+
+while counter < 10:
 
 
-"""
-MUTATE THE GENOME
-using 1/5 success rule for variable mutation step size
-"""
-TARGET_SUCCESS_RATE = 0.2
-ADJUSTMENT_FACTOR = 1.5
-WINDOW_SIZE = 20 
-mutatedGenome, newFitness = evolutionaryLoop(genome, fitnessValue, iterations=1000)
+    for p in population:
+        p.fitness = evaluate_fitness(p.genome, GRID_SIZE)
 
-print("Fitness value for mutated genome is: ", newFitness)
+    print("Best fitness:", population[0].fitness)
 
-FinalGenome = TreeGrid(size=GRID_SIZE, genome=mutatedGenome)
+    population.sort(key=lambda p: p.fitness, reverse=True)
+    survivors = population[:len(population)//2]
+
+    random.shuffle(survivors)
+
+
+    population = []
+
+    elite = survivors[:20]  
+
+    population = elite.copy()
+
+    while len(population) < 1000:
+        p1 = random.choice(elite)
+        p2 = random.choice(elite)
+
+        c1, c2 = Crossover(p1, p2)
+
+
+        c1.genome = mutate(c1.genome, 0.05)
+        c2.genome = mutate(c2.genome, 0.05)
+
+        c1.grid = c1.decode(c1.genome)
+        c2.grid = c2.decode(c2.genome)
+
+        population.extend([c1, c2])
+
+    counter += 1
+#    p, newFitness = evolutionaryLoop(p, fitnessValue, iterations=1000)
+
+print("Fitness value for mutated (crossoverd?) genome is: ", population[0].fitness)
+
+FinalGenome = TreeGrid(size=GRID_SIZE, genome=population[0].genome)
 viewerFinal = GridVisualizer(FinalGenome, cell_size=20, title="Final Tree Arrangement", master=viewerInitial.root)
 
 viewerInitial.mainloop()
