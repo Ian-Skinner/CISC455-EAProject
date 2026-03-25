@@ -69,6 +69,8 @@ class TreeGrid:
 
 def Crossover(parent1, parent2):
 
+    num_trees = parent1.genome.count(1)
+
     child1 = TreeGrid(parent1.size)
     child2 = TreeGrid(parent2.size)
 
@@ -85,6 +87,25 @@ def Crossover(parent1, parent2):
             temp = child1.genome[child1.idx(i,j)]
             child1.genome[child1.idx(i,j)] = child2.genome[child2.idx(i,j)]
             child2.genome[child2.idx(i,j)] = temp
+
+    for c in [child1, child2]:
+
+        current_trees = c.genome.count(1)
+
+        while current_trees < num_trees:
+            c.genome[random.randint(0, len(c.genome) - 1)] = 1
+
+        while current_trees > num_trees:
+            c.genome[random.randint(0, len(c.genome) - 1)] = 0
+
+    
+
+    
+
+    
+
+
+    
 
 
 
