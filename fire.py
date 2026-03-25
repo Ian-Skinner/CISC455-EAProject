@@ -84,7 +84,7 @@ class Fire:
         if jump2Check < self.jump2Prob:
             dir1 = random.choice([-1,1])
             dir2 = random.choice([-1,1])
-            Fire(self.treeGrid, x = self.x + dir1, y = self.y + dir2)
+            newFires.append(Fire(self.treeGrid, x = self.x + dir1, y = self.y + dir2))
 
 
         if burnCheck > self.burnProb:
