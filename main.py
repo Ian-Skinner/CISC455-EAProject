@@ -94,22 +94,13 @@ def Crossover(parent1, parent2):
 
         while current_trees < num_trees:
             c.genome[random.randint(0, len(c.genome) - 1)] = 1
+            current_trees = c.genome.count(1)  # SUGGESTED FIX: update count or loop never terminates
 
         while current_trees > num_trees:
             c.genome[random.randint(0, len(c.genome) - 1)] = 0
+            current_trees = c.genome.count(1)  # SUGGESTED FIX: update count or loop never terminates
 
-    
-
-    
-
-    
-
-
-    
-
-
-
-
+    return child1, child2  # SUGGESTED FIX: return children or they are lost after this call
 
 class GridVisualizer:
 
@@ -295,6 +286,89 @@ def evolutionaryLoop(parentGenome, currentFitness, iterations):
             trialCount = 0
 
     return genome, currentFitness
+
+def tournament_select(population, fitnesses, k=3):
+    # Pick k random individuals, return the genome with the highest fitness
+    # We pick best from k random individuals and not the global best to preserve diversity
+
+    candidates = random.sample(range(len(population)), k)
+
+    best_idx = candidates[0]
+    for idx in candidates:
+        if fitnesses[idx] > fitnesses[best_idx]:
+            best_idx = idx
+
+    return population[best_idx]
+
+
+def evolve(population, fitnesses, size, num_trees, num_elites=2, k=3, mutation_rate=0.05):
+    placement = Placement(size=size, num_trees=num_trees)
+
+    # Elitism: carry the best individuals unchanged into the next generation
+
+    # Sorts the highest fitness scores by POPULATION INDEX
+    # then copies k amount to the next generation unchanged
+    sorted_indices = sorted(range(len(population)), key=lambda i: fitnesses[i], reverse=True)
+    new_population = []
+    for i in range(num_elites):
+        new_population.append(population[sorted_indices[i]][:])
+
+    # Fill the rest via tournament selection + crossover + mutation
+    while len(new_population) < len(population):
+        # Pick two parents
+        p1 = tournament_select(population, fitnesses, k)
+        p2 = tournament_select(population, fitnesses, k)
+
+        # Complete crossover (expects treeGrid objects so we wrap first)
+        tg1 = TreeGrid(size=size, genome=p1[:])
+        tg2 = TreeGrid(size=size, genome=p2[:])
+        child1, child2 = Crossover(tg1, tg2)
+
+        # REPAIR after mutating to preserve # of trees
+        c1 = placement.repair(mutate(child1.genome, mutation_rate))
+        c2 = placement.repair(mutate(child2.genome, mutation_rate))
+
+        # Check populations, if new_population size is odd then add 1 more 
+        # to make sure future tourney is possible
+        new_population.append(c1)
+        if len(new_population) < len(population):
+            new_population.append(c2)
+
+    return new_population
+
+
+def run_ea(size, num_trees, pop_size=50, generations=100, num_runs=10, num_elites=2, k=3, mutation_rate=0.05):
+    placement = Placement(size=size, num_trees=num_trees)
+    population = placement.generate_population(pop_size)
+
+    best_genome = None
+    best_fitness = -1
+
+    for gen in range(generations):
+
+        # Score fitness for every genome in the population
+        fitnesses = []
+        for g in population:
+            fitnesses.append(evaluate_fitness(g, size, num_runs))
+
+        # Find the (index of) best genome this generation
+        gen_best_idx = 0
+        for i in range(len(population)):
+            if fitnesses[i] > fitnesses[gen_best_idx]:
+                gen_best_idx = i
+        gen_best_fitness = fitnesses[gen_best_idx]
+
+        # Track the best genome found across all generations
+        if gen_best_fitness > best_fitness:
+            best_fitness = gen_best_fitness
+            best_genome = population[gen_best_idx][:]
+
+        print(f"Gen {gen + 1}/{generations} | Best: {gen_best_fitness:.2f} | Overall best: {best_fitness:.2f}")
+
+        population = evolve(population, fitnesses, size, num_trees, num_elites, k, mutation_rate)
+
+    return best_genome, best_fitness
+
 
 """
 SET INITIAL PARAMETERS
